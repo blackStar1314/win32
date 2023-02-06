@@ -29,3 +29,4 @@ endif()
 
 
 add_subdirectory("hardware information")
+add_subdirectory("SMBIOS information")
