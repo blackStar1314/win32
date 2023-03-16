@@ -1,0 +1,118 @@
+@startuml
+
+component sndvol{
+    abstract IVolumeListener
+    {
+        + {abstract} void Update(bool mute, float level)
+    }
+
+    abstract IPeakMeterListener
+    {
+        + {abstract} void Update(float peakValue)
+    }
+
+    enum DeviceType
+    {
+        TYPE_RENDER = 0,
+        TYPE_CAPTURE,
+        TYPE_ALL
+    }
+
+    abstract AudioDevice
+    {
+        # string id
+        # string name
+        # bool inUse
+        # AudioVolumeControls* control
+        # IVolumeListener* volumeListeners[]
+        # IPeakMeterListener* peakMeterListeners[]
+        ==
+        + {abstract} DeviceType GetDeviceType()
+        + {abstract} bool SetMute(bool mute)
+        + {abstract} bool GetMute()
+        + {abstract} bool SetVolumeLevel(float level)
+        + {abstract} float GetVolumeLevel()
+        ----
+        + void AddVolumeListener(VolumeListener* listener)
+        + void RemoveVolumeListener(VolumeListener* listener)
+        + void AddPeakMeterListener(PeakMeterListener* listener)
+        + void RemovePeakMeterListener(PeakMeterListener* listener)
+        ---
+        + string GetId()
+        + string GetName()
+        + void SetUsed(bool inUse)
+        + bool GetUsed()
+        ---
+        # void OnVolumeNotify(bool mute, float level)
+        # void OnPeakMeterNotify(float peakValue)
+    }
+
+    namespace impl{
+
+        class AudioDeviceEnumeratorWin
+
+        class AudioVolumeWin
+        {
+            - AudioDeviceEnumeratorWin& enumerator
+            - IVolumeListener& listener
+        }
+        class AudioVolumeMeterWin
+        {
+            - AudioDeviceEnumeratorWin& enumerator
+            - IPeakMeterListener& listener
+        }
+
+        AudioVolumeWin ..> AudioDeviceEnumeratorWin
+        AudioVolumeWin ..|> IVolumeListener
+        AudioVolumeMeterWin ..> AudioDeviceEnumeratorWin
+        AudioVolumeMeterWin ..|> IPeakMeterListener
+
+        class AudioVolumeControls
+        {
+            - AudioDevice& device
+            - AudioDeviceEnumeratorWin enumerator
+            - AudioVolumeWin volume
+            - AudioVolumeMeterWin meter
+        }
+
+        AudioVolumeControls *-- AudioDeviceEnumeratorWin
+        AudioVolumeControls *-- AudioVolumeWin
+        AudioVolumeControls *-- AudioVolumeMeterWin
+        AudioVolumeControls ..|> IVolumeListener
+        AudioVolumeControls ..|> IPeakMeterListener
+        AudioVolumeControls ..> AudioDevice
+    }
+
+    AudioDevice "1" o-- "0...n" IVolumeListener
+    AudioDevice "1" o-- "0...n" IPeakMeterListener
+
+    class AudioInputDevice
+    class AudioOuputDevice
+
+    AudioInputDevice ..|> AudioDevice
+    AudioOuputDevice ..|> AudioDevice
+
+    class AudioDeviceManager
+    {
+        - AudioDevice* audDevices[]
+
+        + AudioDeviceInfo[] EnumerateDevice(DeviceType type)
+        + AudioDevice* GetDevice(string id)
+        + void FreeDevice(string id)
+    }
+
+    AudioDeviceManager "1" --o "1...n" AudioDevice
+}
+
+component client{
+
+    class Task
+    Task .up.|> IVolumeListener
+    Task .up.|> IPeakMeterListener
+    Task .up.> AudioDeviceManager : use
+    Task .up.> AudioDevice : use
+
+}
+
+
+@enduml
