@@ -1,6 +1,7 @@
 ﻿#include "com_init.h"
 #include <mmdeviceapi.h>    // IMMDevice
 #include <endpointvolume.h> // IAudioEndpointVolume
+#include <atlbase.h>        // CComPtr
 #include <iostream>
 
 using namespace std;
@@ -62,23 +63,23 @@ private:
 
 int main()
 {
-    ComInit              comInit;
-    IMMDeviceEnumerator* enumerator = nullptr;
-    auto                 hr         = ::CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator),
+    ComInit                      comInit;
+    CComPtr<IMMDeviceEnumerator> enumerator;
+    auto                         hr = ::CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator),
                                                          reinterpret_cast<void**>(&enumerator));
     if (FAILED(hr))
     {
         return 1;
     }
 
-    IMMDevice* device = nullptr;
-    hr                = enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
+    CComPtr<IMMDevice> device;
+    hr = enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
     if (FAILED(hr))
     {
         return 2;
     }
 
-    IAudioEndpointVolume* audioEndpointVolume = nullptr;
+    CComPtr<IAudioEndpointVolume> audioEndpointVolume;
     hr = device->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr, reinterpret_cast<void**>(&audioEndpointVolume));
     if (FAILED(hr))
     {

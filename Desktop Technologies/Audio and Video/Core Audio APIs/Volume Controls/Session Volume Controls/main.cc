@@ -1,9 +1,9 @@
 ﻿#include "com_init.h"
 #define NOBITMAP
 #include <audiopolicy.h> // IAudioSessionEvents
-#include <mmdeviceapi.h> // IMMDeviceEnumerator 
+#include <mmdeviceapi.h> // IMMDeviceEnumerator
+#include <atlbase.h>     // CComPtr
 #include <iostream>
-
 
 using namespace std;
 
@@ -69,7 +69,6 @@ public:
 
     HRESULT STDMETHODCALLTYPE OnStateChanged(AudioSessionState NewState)
     {
-
         std::string state;
 
         switch (NewState)
@@ -122,33 +121,32 @@ private:
     long _ref;
 };
 
-
 int main()
 {
-    ComInit              comInit;
-    IMMDeviceEnumerator* enumerator = nullptr;
-    auto                 hr         = ::CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator),
-                                                         reinterpret_cast<void**>(&enumerator));
+    ComInit                      comInit;
+    CComPtr<IMMDeviceEnumerator> enumerator;
+    auto                         hr = ::CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator),
+                                                         reinterpret_cast<void **>(&enumerator));
     if (FAILED(hr))
     {
         return 1;
     }
 
-    IMMDevice* device = nullptr;
-    hr                = enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
+    CComPtr<IMMDevice> device;
+    hr = enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
     if (FAILED(hr))
     {
         return 2;
     }
 
-    IAudioSessionManager2* audioSessionManager2 = nullptr;
-    hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_INPROC_SERVER, nullptr, reinterpret_cast<void**>(&audioSessionManager2));
+    CComPtr<IAudioSessionManager2> audioSessionManager2;
+    hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_INPROC_SERVER, nullptr, reinterpret_cast<void **>(&audioSessionManager2));
     if (FAILED(hr))
     {
         return 3;
     }
 
-    ISimpleAudioVolume* simpleAduioVolume;
+    CComPtr<ISimpleAudioVolume> simpleAduioVolume;
     hr = audioSessionManager2->GetSimpleAudioVolume(nullptr, 0, &simpleAduioVolume);
     if (FAILED(hr))
     {
@@ -157,8 +155,8 @@ int main()
 
     simpleAduioVolume->SetMute(true, nullptr);
 
-    IAudioSessionControl* audioSessionControl = nullptr;
-    hr = audioSessionManager2->GetAudioSessionControl(nullptr, 0, &audioSessionControl);
+    CComPtr<IAudioSessionControl> audioSessionControl = nullptr;
+    hr                                                = audioSessionManager2->GetAudioSessionControl(nullptr, 0, &audioSessionControl);
     if (FAILED(hr))
     {
         return 5;
@@ -169,12 +167,10 @@ int main()
     {
         return 6;
     }
-    
 
     getchar();
 
     audioSessionControl->UnregisterAudioSessionNotification(&sessionEvent);
-    audioSessionManager2->Release();
 
     return 0;
 }
