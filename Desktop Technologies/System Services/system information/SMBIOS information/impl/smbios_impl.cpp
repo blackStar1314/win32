@@ -29,7 +29,7 @@ struct SMBIOSHeader
     uint16_t handle;
 };
 
-typedef struct BIOSInfo
+struct BIOSInfo
 {
     SMBIOSHeader header;
     uint8_t      vendor;                                // string
